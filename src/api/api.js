@@ -9,7 +9,7 @@
 import fetch from '../assets/common/fetch';
 
 export function getTyphoonData() {
-  let url = '/data.json';
+  let url = '/data1.json';
   return fetch({
     method: 'Get',
     url,
