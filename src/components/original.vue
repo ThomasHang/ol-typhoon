@@ -1,8 +1,8 @@
 <!--
  * @Author: ThomasHang 11939838031@qq.com
  * @Date: 2022-10-28 07:39:23
- * @LastEditors: ThomasHang 11939838031@qq.com
- * @LastEditTime: 2022-10-31 08:34:20
+ * @LastEditors: 储天航 1193983801@qq.com
+ * @LastEditTime: 2022-10-29 17:00:19
  * @FilePath: /ol-typhoon/src/components/HelloWorld.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -19,9 +19,8 @@ import { Vector as VectorSource } from "ol/source"
 import { Point, LineString, MultiLineString, Polygon } from 'ol/geom';
 import { fromLonLat } from 'ol/proj';
 import { Fill, Stroke, Circle, Style } from "ol/style"
-import featureObj from '../assets/common/feature';
-import Overlay from 'ol/Overlay';
-import TyphoonInfo from './TyphoonInfo.vue';
+
+
 
 export default ({
   name: "helloworld",
@@ -30,12 +29,7 @@ export default ({
       map: null,
       lastShowSolar: null,
       lastZoomPoint: null,
-      typhoonData: [],
-      tfOverlay: null
     }
-  },
-  components: {
-    TyphoonInfo
   },
   methods: {
     drawTyphoonPath: async function () {
@@ -71,6 +65,27 @@ export default ({
       source.addFeatures(features)
       layer.setSource(source)
       this.map.addLayer(layer)
+
+
+      // const { data } = await getTyphoonData()
+
+      // // let points = data.points
+      // console.log(data)
+      // let features = []
+      // for (let item of data) {
+      //   let position = [item.lon, item.lat]
+      //   console.log(position, "position")
+      //   let featurePoint = new Feature({ geometry: new Point(fromLonLat(position)) })
+      //   features.push(featurePoint)
+      // }
+      // console.log(features, "features")
+      // let layer = new VectorLayer()
+      // let source = new VectorSource()
+      // source.addFeatures(features)
+      // layer.setSource(source)
+      // this.map.addLayer(layer)
+
+
     },
     //画出台风路径 interval版
     drawTyphoonPathInterval: async function () {
@@ -99,8 +114,6 @@ export default ({
           })
         }))
         featurePoint.set("typhoonPoint", true)
-        featurePoint.set("points", points[index])
-
         //写到这里的时候，预期的结果应该是，如果有全都绘制了，没有清除上一个绘制的目标点
         if (points[index].radius7.length != 0 || points[index].radius7 != null) {
           let featureSolar = this.drawSolar(points[index])
@@ -171,7 +184,6 @@ export default ({
       let feature = new Feature({
         geometry: new Polygon([positions])
       })
-      feature.set("typhoonSolar", true)
       return feature
     },
 
@@ -184,14 +196,19 @@ export default ({
           return feature
         })
         if (feature) {
-          let execName = featureObj.typeJudge(feature) + "Hover"
-          featureObj[execName].apply(_this, [feature])
-        } else {
-          _this.clearPointZoomStyle()
-          _this.map.getTargetElement().style.cursor = ""
+          if (feature.get("typhoonPoint")) {
+            _this.map.getTargetElement().style.cursor = "pointer"
+            _this.clearPointZoomStyle()
+            feature.getStyle().getImage().setRadius(8)
+            _this.lastZoomPoint = feature
+            feature.changed()
+            // this.map.render()
+          } else {
+            _this.clearPointZoomStyle()
+            _this.map.getTargetElement().style.cursor = ""
 
+          }
         }
-        // }
       })
     },
 
@@ -203,27 +220,13 @@ export default ({
           return feature
         })
         if (feature) {
-          let execName = featureObj.typeJudge(feature) + "Click"
-          featureObj[execName].apply(_this, [feature])
-        } else {
-          console.log("no feature")
+          if (feature.get("typhoonPoint")) {
+            console.log("click")
+          } else {
+            console.log("no feature")
+          }
         }
       })
-    },
-
-    //添加叠加层
-    addOverLayer: function () {
-      const overLayer = new Overlay({
-        element: this.$refs.typhoonInfo.$el,
-        autoPan: {
-          animation: {
-            duration: 250,
-          },
-        },
-      })
-      overLayer.setPosition(undefined)
-      this.tfOverlay = overLayer
-      this.map.addOverlay()
     },
 
     //clearPoint zoom Style
@@ -233,11 +236,6 @@ export default ({
         _this.lastZoomPoint.getStyle().getImage().setRadius(4)
         _this.lastZoomPoint.changed()
       }
-    },
-    //设置弹窗 位置
-    setInfoPosition: function (points) {
-      let position = fromLonLat[points.lng, points.lat];
-      this.tfOverlay.setPosition(position)
     },
 
     /**
@@ -282,7 +280,6 @@ export default ({
     this.drawTyphoonPathInterval()
     this.designHoverOnMap()
     this.designClickOnMap()
-    this.addOverLayer()
   },
 })
 
@@ -290,7 +287,6 @@ export default ({
 
 <template>
   <div id="map" class="map" tabindex="0"></div>
-  <TyphoonInfo ref="typhoonInfo" :typhoonData="this.typhoonData" />
 </template>
 
 <style scoped>
