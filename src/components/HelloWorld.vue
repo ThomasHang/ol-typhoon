@@ -2,7 +2,7 @@
  * @Author: ThomasHang 11939838031@qq.com
  * @Date: 2022-10-28 07:39:23
  * @LastEditors: ThomasHang 11939838031@qq.com
- * @LastEditTime: 2022-10-31 08:34:20
+ * @LastEditTime: 2022-11-02 00:17:30
  * @FilePath: /ol-typhoon/src/components/HelloWorld.vue
  * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
 -->
@@ -86,6 +86,10 @@ export default ({
           return
         }
         let position = [points[index].lng, points[index].lat]
+
+        if (index === 0) {
+          this.map.getView().setCenter(fromLonLat(position))
+        }
         //点的数据源设置
         let featurePoint = new Feature({
           geometry: new Point(fromLonLat(position))
@@ -99,7 +103,7 @@ export default ({
           })
         }))
         featurePoint.set("typhoonPoint", true)
-        featurePoint.set("points", points[index])
+        featurePoint.set("points", points[index]) //整个塞值
 
         //写到这里的时候，预期的结果应该是，如果有全都绘制了，没有清除上一个绘制的目标点
         if (points[index].radius7.length != 0 || points[index].radius7 != null) {
@@ -189,7 +193,7 @@ export default ({
         } else {
           _this.clearPointZoomStyle()
           _this.map.getTargetElement().style.cursor = ""
-
+          _this.tfOverlay.setPosition(undefined)
         }
         // }
       })
@@ -212,7 +216,7 @@ export default ({
     },
 
     //添加叠加层
-    addOverLayer: function () {
+    addOverLay: function () {
       const overLayer = new Overlay({
         element: this.$refs.typhoonInfo.$el,
         autoPan: {
@@ -223,7 +227,7 @@ export default ({
       })
       overLayer.setPosition(undefined)
       this.tfOverlay = overLayer
-      this.map.addOverlay()
+      this.map.addOverlay(overLayer)
     },
 
     //clearPoint zoom Style
@@ -236,6 +240,7 @@ export default ({
     },
     //设置弹窗 位置
     setInfoPosition: function (points) {
+      console.log("points:", points.lng)
       let position = fromLonLat[points.lng, points.lat];
       this.tfOverlay.setPosition(position)
     },
@@ -282,7 +287,8 @@ export default ({
     this.drawTyphoonPathInterval()
     this.designHoverOnMap()
     this.designClickOnMap()
-    this.addOverLayer()
+    this.addOverLay()
+
   },
 })
 
